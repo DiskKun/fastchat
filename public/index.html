@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>FastChat</title>
+<style>
+body { 
+	margin: 0;
+	padding-bottom: 3rem;
+	font-family: monospace, courier;
+	background-color:darkgrey;
+}
+
+			img {
+				border: 1px solid black;
+				max-height: 90%;
+			}
+
+			.left {
+				float: left;
+				width:50%;
+				overflow:auto;
+				overflow-wrap:break-word;
+				height:93vh;
+			}
+			.right {
+				float:left;
+				width:50%;
+				overflow:auto;
+				height:90vh;
+				text-align:center;
+				padding-top:2%;
+			}
+			.row:after {
+  			content: "";
+			  display: table;
+			  clear: both;
+			}
+
+			#status {
+				padding:2%;
+				margin-left:2%;
+				margin-right:2%;
+				background-color:white;
+				border: 1px solid black;
+			}
+			#stick {
+				position:sticky;
+				top:2%;
+			}
+      #form { background: #4488ff; padding: 0.25rem; position: fixed; bottom: 0; left: 0; right: 0; display: flex; height: 7vh; box-sizing: border-box; backdrop-filter: blur(10px); }
+      #input { border: none; padding: 0 1rem; flex-grow: 1; border-radius: 2rem; margin: 0.25rem; }
+      #input:focus { outline: none; }
+      #form > button { background: #8844ff; border: none; padding: 0 1rem; margin: 0.25rem; border-radius: 3px; outline: none; color: #fff; }
+			#messages { list-style-type: none; margin: 0 0 0 0; padding: 0; }
+      #messages > li { padding: 0.5rem 1rem; }
+      #messages > li:nth-child(odd) { background: #ffffff; }
+			#messages > li:nth-child(even) { background: #dddddd; }
+</style>
+	</head>
+	<body>
+		<div class="row">
+			<div class="left" id="left">
+				<div id="stick">
+				<p id="status"></p>
+				</div>
+				<ul id="messages">
+				</ul>
+			</div>			
+			<div class="right" id="right">
+				<img src="../file.file" id="image">
+				<br />
+				<a href="../file.file" download>Download The File</a>
+			</div>
+		</div>
+		<form id="form" action="">
+			<input type="file" onchange="upload(this.files)" />
+			<input id="input" autocomplete="off" placeholder="" /><button>Send</button>
+		</form>
+
+		<script src="/socket.io/socket.io.js"></script>
+		<script>
+			var socket = io();
+
+			var messages = document.getElementById('messages');
+			var form = document.getElementById('form');
+			var input = document.getElementById('input');
+			var image = document.getElementById('image');
+			var state = document.getElementById('status');
+
+
+			function upload(files) {
+				socket.emit('upload', files[0], (status) => {
+					console.log(status);
+				});
+			};
+
+			form.addEventListener('submit', function(e) {
+				e.preventDefault();
+				if (input.value) {
+					socket.emit('chat message', input.value);
+					input.value = '';
+				}
+			});
+
+			socket.on('chat send', function(msg) {
+				var item = document.createElement('li');
+				item.textContent = msg;
+				messages.appendChild(item);
+				document.getElementById('left').scrollTo(0, document.getElementById('left').scrollHeight);
+			});
+
+			socket.on('server send', function(srv) {
+				//var item = document.createElement('li');
+				//item.textContent = srv;
+				//messages.appendChild(item);
+				//document.getElementById('left').scrollTo(0, document.getElementById('left').scrollHeight);
+				//item.style = "font-style: italic;";
+				state.textContent = srv;
+			});
+
+			socket.on('count', function(connected) {
+				input.placeholder = "Users active: " + connected;
+			});
+
+			socket.on('newfile', function() {
+				image.src = "../file.file?" + new Date().getTime();;
+			});
+		</script>
+	</body>
+</html>
